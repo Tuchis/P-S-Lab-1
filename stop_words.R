@@ -64,12 +64,19 @@ line_counter <- unnest_tokens(line, token="words") %>% filter(!splitted %in% spl
 frequent_terms <- freq_terms(tidy_text_credible[4], 20)
 plot(frequent_terms, main="NAME", xlim=c(0,20), ylim=c(0,20))
 
+
+
+stop_words <- read_file("stop_words.txt")
+splitted_stop_words <- strsplit(stop_words, split='\n')
+splitted_stop_words <- splitted_stop_words[[1]]
+
 naiveBayes <- setRefClass("naiveBayes",
                           
   # here it would be wise to have some vars to store intermediate result
   # frequency dict etc. Though pay attention to bag of wards! 
   fields = list(
-    fake_data = "data.frame", credible_data = "data.frame", all_data = "data.frame"
+    fake_data = "data.frame", credible_data = "data.frame", all_data = "data.frame",
+    all_counter = "numeric", fake_counter = "numeric", credible_counter = "numeric"
   ),
   
   
@@ -87,6 +94,10 @@ naiveBayes <- setRefClass("naiveBayes",
       splitted_stop_words <- splitted_stop_words[[1]]
       data_file <- read.csv(file = data_path, stringsAsFactors = FALSE)
       
+      all_counter <<- sum((unnest_tokens(data_file, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words) %>% count(splitted,sort=TRUE))[2])
+      
+      print(all_counter)
+      
       data_fake <- data_file[!(data_file$Label=="credible"),]
       data_credible <- data_file[!(data_file$Label=="fake"),]
       
@@ -94,6 +105,7 @@ naiveBayes <- setRefClass("naiveBayes",
       fake_counters <- fake_tokens %>% count(splitted,sort=TRUE)
       
       summa <- sum(fake_counters[2])
+      fake_counter <<- summa
       print(summa)
       
       unique_values <- nrow(fake_counters)
@@ -104,7 +116,8 @@ naiveBayes <- setRefClass("naiveBayes",
         fake_probability[x, 2] <- (fake_probability[x, 2] + 1) / (summa + unique_values)
       }
       
-      fake_data <<- fake_probability
+      fake_data <<- fake_counters
+      #fake_data <<- fake_probability
       
       print(fake_data)
       
@@ -112,6 +125,7 @@ naiveBayes <- setRefClass("naiveBayes",
       credible_counters <- credible_tokens %>% count(splitted,sort=TRUE)
       
       summa <- sum(credible_counters[2])
+      credible_counter <<- summa
       print(summa)
       
       unique_values <- nrow(credible_counters)
@@ -122,15 +136,59 @@ naiveBayes <- setRefClass("naiveBayes",
         credible_probability[x, 2] <- (credible_probability[x, 2] + 1) / (summa + unique_values)
       }
       
-      credible_data <<- credible_probability
+      credible_data <<- credible_counters
+      #credible_data <<- credible_probability
       
       print(credible_data)
+      print(all_counter)
+      print(fake_counter)
+      print(credible_counter)
     },
     
     # return prediction for a single message 
     predict = function(message)
     {
       
+      fake_probability_overall = fake_counter / all_counter
+      print(fake_probability_overall)
+      credible_probability_overall = credible_counter / all_counter
+      print(credible_probability_overall)
+      message <- tolower(message)
+      words <- strsplit(message , split = " ")[[1]]
+      words <- print(words[!words %in% splitted_stop_words])
+      
+      
+      # Checks probability for fake news
+      fake_probability = 1
+      for (word in words){
+        if (word %in% fake_data$splitted){
+          fake_probability = fake_probability * fake_data[which(fake_data[1] == word), 2] / fake_probability_overall
+        }
+        else {
+          fake_probability = fake_probability * (1 / fake_counter) / fake_probability_overall
+        }
+      }
+      
+      print(fake_probability)
+      credible_probability = 1
+      print(credible_data[1])
+      for (word in words){
+        if (word %in% credible_data$splitted){
+          print(credible_data[which(credible_data[1] == word), 2])
+          credible_probability = credible_probability * credible_data[which(credible_data[1] == word), 2] / credible_probability_overall
+        }
+        else {
+          credible_probability = credible_probability * (1/credible_counter) / credible_probability_overall
+        }
+      }
+      print(fake_probability)
+      print(credible_probability)
+      if (fake_probability >= credible_probability){
+        print("FAKE")
+      }
+      else{
+        print("CREDIBLE")
+      }
     },
     
     # score you test set so to get the understanding how well you model
@@ -140,10 +198,12 @@ naiveBayes <- setRefClass("naiveBayes",
     # try how well your model generalizes to real world data! 
     score = function(X_test, y_test)
     {
-      # TODO
+      
     }
 ))
 
 model = naiveBayes()
 model$fit(train_path)
+model$predict("Red Flag Warning: These California Wildfires Are ‘Among The Most Destructive Fire Events In US History’ And They Are About To Get Even Worse")
+
 
