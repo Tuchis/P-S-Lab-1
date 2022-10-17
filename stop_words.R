@@ -50,6 +50,8 @@ for (x in 1:unique_values){
   credible_prob[x, 2] <- (credible_prob[x, 2] + 1) / (summa + unique_values)
 }
 
+print(credible_prob)
+
 
 
 credible_prob <= replace(counters, counters$n, cou)
@@ -67,21 +69,68 @@ naiveBayes <- setRefClass("naiveBayes",
   # here it would be wise to have some vars to store intermediate result
   # frequency dict etc. Though pay attention to bag of wards! 
   fields = list(
-    counter_fake <- naiveBayes %>% 
+    fake_data = "data.frame", credible_data = "data.frame", all_data = "data.frame"
   ),
+  
+  
   methods = list(
+    
+    
+    
     # prepare your training data as X - bag of words for each of your
     # messages and corresponding label for the message encoded as 0 or 1 
     # (binary classification task)
-    fit = function(X, y)
+    fit = function(data_path)
     {
-      # TODO
+      stop_words <- read_file("stop_words.txt")
+      splitted_stop_words <- strsplit(stop_words, split='\n')
+      splitted_stop_words <- splitted_stop_words[[1]]
+      data_file <- read.csv(file = data_path, stringsAsFactors = FALSE)
+      
+      data_fake <- data_file[!(data_file$Label=="credible"),]
+      data_credible <- data_file[!(data_file$Label=="fake"),]
+      
+      fake_tokens <- unnest_tokens(data_fake, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
+      fake_counters <- fake_tokens %>% count(splitted,sort=TRUE)
+      
+      summa <- sum(fake_counters[2])
+      print(summa)
+      
+      unique_values <- nrow(fake_counters)
+      
+      fake_probability <- fake_counters
+      
+      for (x in 1:unique_values){
+        fake_probability[x, 2] <- (fake_probability[x, 2] + 1) / (summa + unique_values)
+      }
+      
+      fake_data <<- fake_probability
+      
+      print(fake_data)
+      
+      credible_tokens <- unnest_tokens(data_credible, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
+      credible_counters <- credible_tokens %>% count(splitted,sort=TRUE)
+      
+      summa <- sum(credible_counters[2])
+      print(summa)
+      
+      unique_values <- nrow(credible_counters)
+      
+      credible_probability <- credible_counters
+      
+      for (x in 1:unique_values){
+        credible_probability[x, 2] <- (credible_probability[x, 2] + 1) / (summa + unique_values)
+      }
+      
+      credible_data <<- credible_probability
+      
+      print(credible_data)
     },
     
     # return prediction for a single message 
     predict = function(message)
     {
-      # TODO
+      
     },
     
     # score you test set so to get the understanding how well you model
@@ -96,5 +145,5 @@ naiveBayes <- setRefClass("naiveBayes",
 ))
 
 model = naiveBayes()
-model$fit()
+model$fit(train_path)
 
