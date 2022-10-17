@@ -52,7 +52,7 @@ for (x in 1:unique_values){
 
 print(credible_prob)
 
-
+data_file <- read.csv(file = test_path, stringsAsFactors = FALSE)
 
 credible_prob <= replace(counters, counters$n, cou)
 
@@ -150,12 +150,11 @@ naiveBayes <- setRefClass("naiveBayes",
     {
       
       fake_probability_overall = fake_counter / all_counter
-      print(fake_probability_overall)
+
       credible_probability_overall = credible_counter / all_counter
-      print(credible_probability_overall)
+
       message <- tolower(message)
       words <- strsplit(message , split = " ")[[1]]
-      words <- print(words[!words %in% splitted_stop_words])
       
       
       # Checks probability for fake news
@@ -169,25 +168,23 @@ naiveBayes <- setRefClass("naiveBayes",
         }
       }
       
-      print(fake_probability)
+
       credible_probability = 1
-      print(credible_data[1])
+
       for (word in words){
         if (word %in% credible_data$splitted){
-          print(credible_data[which(credible_data[1] == word), 2])
           credible_probability = credible_probability * credible_data[which(credible_data[1] == word), 2] / credible_probability_overall
         }
         else {
           credible_probability = credible_probability * (1/credible_counter) / credible_probability_overall
         }
       }
-      print(fake_probability)
-      print(credible_probability)
+
       if (fake_probability >= credible_probability){
-        print("FAKE")
+        return (FALSE)
       }
       else{
-        print("CREDIBLE")
+        return (TRUE)
       }
     },
     
@@ -196,9 +193,25 @@ naiveBayes <- setRefClass("naiveBayes",
     # look at f1 score or precision and recall
     # visualize them 
     # try how well your model generalizes to real world data! 
-    score = function(X_test, y_test)
+    score = function(data_path)
     {
-      
+      data_file <- read.csv(file = data_path, stringsAsFactors = FALSE)
+      print("HERE")
+      correct_guesses = 0
+      wrong_guesses = 0
+      for (row in 1:nrow(data_file)){
+        print(row)
+        result <- model$predict(data_file[row, 3])
+        if ((result == TRUE & data_file[row, 4] == "credible") || (result == FALSE & data_file[row, 4] == "fake")){
+          correct_guesses = correct_guesses + 1
+        }
+        else{
+          wrong_guesses = wrong_guesses + 1
+        }
+      }
+      print("THERE")
+      print(correct_guesses)
+      print(wrong_guesses)
     }
 ))
 
@@ -206,4 +219,4 @@ model = naiveBayes()
 model$fit(train_path)
 model$predict("Red Flag Warning: These California Wildfires Are ‘Among The Most Destructive Fire Events In US History’ And They Are About To Get Even Worse")
 
-
+model$score(test_path)
