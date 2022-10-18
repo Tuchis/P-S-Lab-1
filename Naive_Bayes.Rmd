@@ -165,6 +165,12 @@ methods = list(
       if (word %in% fake_data$splitted & word %in% credible_data$splitted){
         fake_probability = fake_probability * fake_data[which(fake_data[1] == word), 2] / credible_data[which(credible_data[1] == word), 2]
       }
+      else if (word %in% fake_data$splitted){
+        fake_probability = fake_probability * fake_data[which(fake_data[1] == word), 2] / (1/all_counter)
+      }
+      else if (word %in% credible_data$splitted){
+        fake_probability = fake_probability * (1/fake_counter) / credible_data[which(credible_data[1] == word), 2]
+      }
       else {
         fake_probability = fake_probability * (1/fake_counter) /(1/all_counter)
       }
@@ -176,6 +182,12 @@ methods = list(
     for (word in words){
       if (word %in% credible_data$splitted & word %in% fake_data$splitted){
         credible_probability = credible_probability / fake_data[which(fake_data[1] == word), 2] * credible_data[which(credible_data[1] == word), 2]
+      }
+      else if (word %in% fake_data$splitted){
+        fake_probability = fake_probability / fake_data[which(fake_data[1] == word), 2] * (1/all_counter)
+      }
+      else if (word %in% credible_data$splitted){
+        fake_probability = fake_probability / (1/fake_counter) * credible_data[which(credible_data[1] == word), 2]
       }
       else {
         credible_probability = credible_probability * (1/credible_counter) /(1/all_counter)
