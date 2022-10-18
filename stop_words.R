@@ -14,11 +14,6 @@ stop_words <- read_file("stop_words.txt")
 splitted_stop_words <- strsplit(stop_words, split='\n')
 splitted_stop_words <- splitted_stop_words[[1]]
 
-test <-  read.csv(file = test_path, stringsAsFactors = FALSE)
-
-test_fake <- test[!(test$Label=="credible"),]
-test_credible <- test[!(test$Label=="fake"),]
-
 naiveBayes <- setRefClass("naiveBayes",
                           
 # here it would be wise to have some vars to store intermediate result
@@ -88,6 +83,8 @@ methods = list(
     
     #credible_data <<- credible_counters
     credible_data <<- credible_probability
+    
+    print("MODEL IS FITTED")
   },
   
   # return prediction for a single message 
@@ -146,6 +143,10 @@ methods = list(
     
     # Initialize counters for guesses
     correct_guesses = 0
+    correct_credibles = 0
+    correct_fakes = 0
+    wrong_credibles = 0
+    wrong_fakes = 0
     wrong_guesses = 0
     
     # For loop through all rows in data frame of real world data
@@ -153,20 +154,32 @@ methods = list(
       print(row / nrow(data_file) * 100)
       print(" % of file parsed")
       result <- model$predict(data_file[row, 3])
-      if ((result == TRUE & data_file[row, 4] == "credible") || (result == FALSE & data_file[row, 4] == "fake")){
+      if (result == TRUE & data_file[row, 4] == "credible"){
         correct_guesses = correct_guesses + 1
+        correct_credibles = correct_credibles + 1
+      }
+      else if(result == FALSE & data_file[row, 4] == "fake"){
+        correct_guesses = correct_guesses + 1
+        correct_fakes = correct_fakes + 1
+      }
+      else if (result == TRUE){
+        wrong_credibles = wrong_credibles + 1
+        wrong_guesses = wrong_guesses + 1
       }
       else{
+        wrong_fakes = wrong_fakes + 1
         wrong_guesses = wrong_guesses + 1
       }
     }
-    print("Precision of model is:")
+    print("Accuracy of model is:")
     print(correct_guesses/(correct_guesses + wrong_guesses))
+    print("Precision of credible is")
+    print(correct_credibles / (correct_credibles + wrong_credibles))
+    print("Precision of fakes is ")
+    print(correct_fakes / (correct_fakes + wrong_fakes))
   }
 ))
 
 model = naiveBayes()
 model$fit(train_path)
-model$predict("Red Flag Warning: These California Wildfires Are ‘Among The Most Destructive Fire Events In US History’ And They Are About To Get Even Worse Wildfires Are ‘Among The Most Destructive Fire Events In US History’ And They Are About To Get Even Worse Wildfires Are ‘Among The Most Destructive Fire Events In US History’ And They Are About To Get Even Worse Wildfires Are ‘Among The Most Destructive Fire Events In US History’ And They Are About To Get Even Worse ")
-
 model$score(test_path)
