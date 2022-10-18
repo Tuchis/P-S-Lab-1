@@ -122,19 +122,6 @@ methods = list(
       }
     }
     
-    if (fake_probability == Inf){
-      print("FAKE INFINITY")
-    }
-    if (fake_probability == 0){
-      print("FAKE 0")
-    }
-    if (credible_probability == Inf){
-      print("CREDIBLE INFINITY")
-    }
-    if (credible_probability == 0){
-      print("CREDIBLE 0")
-    }
-    
     # Returns if that message is fake (FALSE) or credible (TRUE)
     if (fake_probability >= credible_probability){
       return (FALSE)
@@ -190,6 +177,22 @@ methods = list(
     print(correct_credibles / (correct_credibles + wrong_credibles))
     print("Precision of fakes is ")
     print(correct_fakes / (correct_fakes + wrong_fakes))
+    wrong_fake_probability <- wrong_fakes / (correct_guesses + wrong_guesses)
+    wrong_credible_probability <- wrong_credibles / (correct_guesses + wrong_guesses)
+    data <- as.matrix(data.frame(Total = c(correct_guesses/(correct_guesses + wrong_guesses), 1-correct_guesses/(correct_guesses + wrong_guesses)),
+                                Credible = c(correct_credibles / (correct_credibles + wrong_credibles), 1 - correct_credibles / (correct_credibles + wrong_credibles)),
+                                  Fake = c(correct_fakes / (correct_fakes + wrong_fakes), 1 - correct_fakes / (correct_fakes + wrong_fakes))))
+    rownames(data) <- c("Credible", "Fake")
+    barplot(data,
+            col = c("#1b98e0", "#353436"),
+            beside = TRUE)
+    legend("center",
+           legend = c("Credible", "Fake"),
+           fill = c("#1b98e0", "#353436"))
+    
+  
+    barplot(c(correct_guesses / (correct_guesses + wrong_guesses), correct_credibles / (correct_credibles + wrong_credibles), correct_fakes / (correct_fakes + wrong_fakes)), 
+            names.arg = c("Total", "Credible", "Fake"))
   }
 ))
 
