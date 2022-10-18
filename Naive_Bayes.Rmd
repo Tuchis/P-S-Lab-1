@@ -70,6 +70,8 @@ splitted_stop_words <- splitted_stop_words[[1]]
 
 ## Classifier implementation
 
+Naive Bayes classifier that is created to analyse text of train data and to use it for future predictions. 
+
 ```{r}
 naiveBayes <- setRefClass("naiveBayes",
                           
@@ -205,8 +207,6 @@ methods = list(
     
     # For loop through all rows in data frame of real world data
     for (row in 1:nrow(data_file)){
-      print(row / nrow(data_file) * 100)
-      print(" % of file parsed")
       result <- model$predict(data_file[row, 3])
       if (result == TRUE & data_file[row, 4] == "credible"){
         correct_guesses = correct_guesses + 1
@@ -236,7 +236,7 @@ methods = list(
     data <- as.matrix(data.frame(Total = c(correct_guesses/(correct_guesses + wrong_guesses), 1-correct_guesses/(correct_guesses + wrong_guesses)),
                                 Credible = c(correct_credibles / (correct_credibles + wrong_credibles), 1 - correct_credibles / (correct_credibles + wrong_credibles)),
                                   Fake = c(correct_fakes / (correct_fakes + wrong_fakes), 1 - correct_fakes / (correct_fakes + wrong_fakes))))
-    rownames(data) <- c("Credible", "Fake")
+    rownames(data) <- c("Correct guess", "Wrong guess")
     barplot(data,
             col = c("#1b98e0", "#353436"),
             beside = TRUE)
@@ -244,8 +244,17 @@ methods = list(
            legend = c("Credible", "Fake"),
            fill = c("#1b98e0", "#353436"))
     
-    data <- as.matrix(data.frame(Precision = c(correct_credibles / (correct_credibles + wrong_credibles), correct_fakes / (correct_fakes + wrong_fakes)),
-                                 Recall = c(correct_credibles / (correct_credibles + wrong_fakes), correct_fakes / (correct_fakes + wrong_credibles))))
+    precision_credible <- correct_credibles / (correct_credibles + wrong_credibles)
+    recall_credible <- correct_credibles / (correct_credibles + wrong_fakes)
+    precision_fake <- correct_fakes / (correct_fakes + wrong_fakes)
+    recall_fake <- correct_fakes / (correct_fakes + wrong_credibles)
+    f1score_credible <- 2 * precision_credible * recall_credible / (precision_credible + recall_credible)
+    f1score_fake <- 2 * precision_fake * recall_fake / (precision_fake + recall_fake)
+    
+    data <- as.matrix(data.frame(Precision = c(precision_credible, precision_fake),
+                                 Recall = c(recall_credible, recall_fake),
+                                  F1Score = c(f1score_credible, f1score_fake)))
+                                  
     rownames(data) <- c("Credible", "Fake")
     barplot(data,
             col = c("#1b98e0", "#353436"),
@@ -280,13 +289,41 @@ visualization. Show what are the most common words for negative and
 positive examples as a histogram, word cloud etc. Be creative!
 =
 
+```{r}
+# Read file to plot most frequent words from fake news
+data <- read.csv(file = test_path, stringsAsFactors = FALSE)
+
+# Split data into two sets (fake and credible news)
+data_fake <- data[!(data$Label=="credible"),]
+data_credible <- data[!(data$Label=="fake"),]
+
+# Text, that is classified as fake, without stop words
+data_fake <- unnest_tokens(data_fake, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
+
+# Plot of words in fake news
+print("WORDS THAT APPEAR IN FAKE NEWS")
+frequent_terms <- freq_terms(data_fake[4], 20)
+plot(frequent_terms, xlab=c(0,20), ylab=c(0,20))
+
+```
+
+Some text
+
+
+```{r}
+
+# Text, that is classified as fake, without stop words
+data_credible <- unnest_tokens(data_credible, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
+
+# Plot of words in fake news
+print("WORDS THAT APPEAR IN CREDIBLE NEWS")
+frequent_terms <- freq_terms(data_credible[4], 20)
+plot(frequent_terms, xlab=c(0,20), ylab=c(0,20))
+```
+
 ## Conclusions
 
-Summarize your work by explaining in a few sentences the points listed
-below.
+ - To perform this task, we used the Naive Bayes Classifier. The algorithm is based on the Bayes theorem and predicts the tag of a text such as a piece of email or newspaper article. It calculates the probability of each tag for a given sample and then gives the tag with the highest probability as output. This means we find the probability of every occurrence of a certain word in the false or credible news. This approach is great and highly scalable and can easily handle large datasets, but it's not perfect, still we have errors, becouse Conditional Independence Assumption does not always hold. In most situations, the feature shows some form of dependency.
 
--   Describe the method implemented in general. Show what are
-    mathematical foundations you are basing your solution on.
--   List pros and cons of the method. This should include the
-    limitations of your method, all the assumption you make about the
-    nature of your data etc.
+ - Due to the large dataset our algorithm works better than it would work with smaller datasets.
+ - Besides, here we learned how to work with the R language, which will help us in the future research.

@@ -185,26 +185,56 @@ methods = list(
     rownames(data) <- c("Credible", "Fake")
     barplot(data,
             col = c("#1b98e0", "#353436"),
-            beside = TRUE)
+            beside = TRUE, ylim = 1)
     legend("center",
            legend = c("Credible", "Fake"),
            fill = c("#1b98e0", "#353436"))
     
-    data <- as.matrix(data.frame(Precision = c(correct_credibles / (correct_credibles + wrong_credibles), correct_fakes / (correct_fakes + wrong_fakes)),
-                                 Recall = c(correct_credibles / (correct_credibles + wrong_fakes), correct_fakes / (correct_fakes + wrong_credibles))))
+    precision_credible <- correct_credibles / (correct_credibles + wrong_credibles)
+    recall_credible <- correct_credibles / (correct_credibles + wrong_fakes)
+    precision_fake <- correct_fakes / (correct_fakes + wrong_fakes)
+    recall_fake <- correct_fakes / (correct_fakes + wrong_credibles)
+    f1score_credible <- 2 * precision_credible * recall_credible / (precision_credible + recall_credible)
+    f1score_fake <- 2 * precision_fake * recall_fake / (precision_fake + recall_fake)
+    
+    data <- as.matrix(data.frame(Precision = c(precision_credible, precision_fake),
+                                 Recall = c(recall_credible, recall_fake),
+                                  F1Score = c(f1score_credible, f1score_fake)))
+                                  
     rownames(data) <- c("Credible", "Fake")
     barplot(data,
             col = c("#1b98e0", "#353436"),
-            beside = TRUE)
+            beside = TRUE, ylim = 1)
     legend("center",
            legend = c("Credible", "Fake"),
            fill = c("#1b98e0", "#353436"))
-    
-    print("F1 score is")
-    print(2 * correct_credibles / (correct_credibles + wrong_credibles) * correct_credibles / credible_counter / (correct_credibles / (correct_credibles + wrong_credibles) + correct_credibles / credible_counter))
   }
 ))
 
 model = naiveBayes()
 model$fit(train_path)
 model$score(test_path)
+
+# Read file to plot most frequent words from fake news
+data <- read.csv(file = test_path, stringsAsFactors = FALSE)
+
+# Split data into two sets (fake and credible news)
+data_fake <- data[!(data$Label=="credible"),]
+data_credible <- data[!(data$Label=="fake"),]
+
+# Text, that is classified as fake, without stop words
+data_fake <- unnest_tokens(data_fake, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
+
+# Plot of words in fake news
+frequent_terms <- freq_terms(data_fake[4], 20)
+plot(frequent_terms, xlab=c(0,20), ylab=c(0,20))
+
+# Text, that is classified as fake, without stop words
+data_credible <- unnest_tokens(data_credible, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
+
+# Plot of words in fake news
+frequent_terms <- freq_terms(data_credible[4], 20)
+plot(frequent_terms, xlab=c(0,20), ylab=c(0,20))
+
+
+
