@@ -70,7 +70,10 @@ splitted_stop_words <- splitted_stop_words[[1]]
 
 ## Classifier implementation
 
-Naive Bayes classifier that is created to analyse text of train data and to use it for future predictions. 
+Naive Bayes classifier that is created to analyse text of train data and to use it for future predictions. Is is based on applying Bayes theorem with independence assumptions between the features. In our case we determine if the given text can be determined as fake news or credible news. At first we train our classifier with big csv table that contains more than 3000 entries of different news with labels that classify them. We create data frame with probabilities of words to be in given category, which will be used in next functions.
+
+Function predict is the most important function in classifier. It returns suggestion if the text that was given is fake (FALSE) or credible (TRUE). That is calculated with use of modified Bayes theorem. In our case we have to evade continious multiplying by values that are less than 1, because it can lead to unpredicted result, as our variable can become 0 due to limitation of computer. That's why we would multiply our constant by probability of word given that we look for it in credible words and divide it by probability of word, given that we look for it in fake words and vice versa. In the end we just find what value is bigger and that is our choice for prediction.
+
 
 ```{r}
 naiveBayes <- setRefClass("naiveBayes",
@@ -271,10 +274,7 @@ model$fit(train_path)
 
 ## Measure effectiveness of your classifier
 
--   Note that accuracy is not always a good metric for your classifier.
-    Look at precision and recall curves, F1 score metric.
--   Visualize them.
--   Show failure cases.
+- Making classifier isn't the end of the process, we should measure effectiveness of it. Good measurement of it is F1Score, that uses precision and recall to get the score of effectiveness of classifier. To calculate it we can use following formula: 2 * Precision * Recall / (Precision + Recall). For that we run function score that will run test data set for our classifier.
 
 ```{r}
 model$score(test_path)
