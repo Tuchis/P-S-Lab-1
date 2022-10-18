@@ -103,10 +103,10 @@ methods = list(
     
     for (word in words){
       if (word %in% fake_data$splitted & word %in% credible_data$splitted){
-        fake_probability = fake_probability * fake_data[which(fake_data[1] == word), 2] / credible_data[which(credible_data[1] == word), 2] * 100
+        fake_probability = fake_probability * fake_data[which(fake_data[1] == word), 2] / credible_data[which(credible_data[1] == word), 2]
       }
       else {
-        fake_probability = fake_probability * (1 / all_counter) * 100
+        fake_probability = fake_probability * (1/fake_counter) /(1/all_counter)
       }
     }
     
@@ -115,11 +115,24 @@ methods = list(
     
     for (word in words){
       if (word %in% credible_data$splitted & word %in% fake_data$splitted){
-        credible_probability = credible_probability / fake_data[which(fake_data[1] == word), 2] * credible_data[which(credible_data[1] == word), 2] * 100
+        credible_probability = credible_probability / fake_data[which(fake_data[1] == word), 2] * credible_data[which(credible_data[1] == word), 2]
       }
       else {
-        credible_probability = credible_probability * (1/all_counter) * 100
+        credible_probability = credible_probability * (1/credible_counter) /(1/all_counter)
       }
+    }
+    
+    if (fake_probability == Inf){
+      print("FAKE INFINITY")
+    }
+    if (fake_probability == 0){
+      print("FAKE 0")
+    }
+    if (credible_probability == Inf){
+      print("CREDIBLE INFINITY")
+    }
+    if (credible_probability == 0){
+      print("CREDIBLE 0")
     }
     
     # Returns if that message is fake (FALSE) or credible (TRUE)
