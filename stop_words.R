@@ -190,9 +190,18 @@ methods = list(
            legend = c("Credible", "Fake"),
            fill = c("#1b98e0", "#353436"))
     
-  
-    barplot(c(correct_guesses / (correct_guesses + wrong_guesses), correct_credibles / (correct_credibles + wrong_credibles), correct_fakes / (correct_fakes + wrong_fakes)), 
-            names.arg = c("Total", "Credible", "Fake"))
+    data <- as.matrix(data.frame(Precision = c(correct_credibles / (correct_credibles + wrong_credibles), correct_fakes / (correct_fakes + wrong_fakes)),
+                                 Recall = c(correct_credibles / (correct_credibles + wrong_fakes), correct_fakes / (correct_fakes + wrong_credibles))))
+    rownames(data) <- c("Credible", "Fake")
+    barplot(data,
+            col = c("#1b98e0", "#353436"),
+            beside = TRUE)
+    legend("center",
+           legend = c("Credible", "Fake"),
+           fill = c("#1b98e0", "#353436"))
+    
+    print("F1 score is")
+    print(2 * correct_credibles / (correct_credibles + wrong_credibles) * correct_credibles / credible_counter / (correct_credibles / (correct_credibles + wrong_credibles) + correct_credibles / credible_counter))
   }
 ))
 
