@@ -281,13 +281,15 @@ model$score(test_path)
 ```
 
 
-### Data visualization
+## Data visualization
 
-Each time you work with some data, you need to understand it before you
-start processing it. R has very powerful tools to make nice plots and
-visualization. Show what are the most common words for negative and
-positive examples as a histogram, word cloud etc. Be creative!
+Here we also have some graphs to show that our program works correctly.
+So on the graphs you can see that Precision, Recall and F1Score are almost the same, that means our algorithm finds fake or credible news equally qualitatively, so it works at most correctly. Besides we spotted the tendency of  fake news having the word “said”, which you can spot on the third graph. On the fourth graph it looks like we have a lot of different words, though the word “will” exceeds others.
+
+
 =
+
+### Words that are represented in fake news
 
 ```{r}
 # Read file to plot most frequent words from fake news
@@ -307,8 +309,7 @@ plot(frequent_terms, xlab=c(0,20), ylab=c(0,20))
 
 ```
 
-Some text
-
+### Words that are represented in credible news
 
 ```{r}
 
@@ -326,4 +327,5 @@ plot(frequent_terms, xlab=c(0,20), ylab=c(0,20))
  - To perform this task, we used the Naive Bayes Classifier. The algorithm is based on the Bayes theorem and predicts the tag of a text such as a piece of email or newspaper article. It calculates the probability of each tag for a given sample and then gives the tag with the highest probability as output. This means we find the probability of every occurrence of a certain word in the false or credible news. This approach is great and highly scalable and can easily handle large datasets, but it's not perfect, still we have errors, becouse Conditional Independence Assumption does not always hold. In most situations, the feature shows some form of dependency.
 
  - Due to the large dataset our algorithm works better than it would work with smaller datasets.
+ 
  - Besides, here we learned how to work with the R language, which will help us in the future research.
