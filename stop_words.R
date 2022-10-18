@@ -38,24 +38,27 @@ methods = list(
   # (binary classification task)
   fit = function(data_path)
   {
+    # Stop words
     stop_words <- read_file("stop_words.txt")
     splitted_stop_words <- strsplit(stop_words, split='\n')
     splitted_stop_words <- splitted_stop_words[[1]]
+    
+    # Read file for training
     data_file <- read.csv(file = data_path, stringsAsFactors = FALSE)
     
+    # Number of all words
     all_counter <<- sum((unnest_tokens(data_file, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words) %>% count(splitted,sort=TRUE))[2])
     
-    print(all_counter)
-    
+    # Create two data frames that have credible and fake news
     data_fake <- data_file[!(data_file$Label=="credible"),]
     data_credible <- data_file[!(data_file$Label=="fake"),]
     
+    # Tokenise fake news and find probabilities of each word given that news are fake
     fake_tokens <- unnest_tokens(data_fake, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
     fake_counters <- fake_tokens %>% count(splitted,sort=TRUE)
     
     summa <- sum(fake_counters[2])
     fake_counter <<- summa
-    print(summa)
     
     unique_values <- nrow(fake_counters)
     
@@ -68,14 +71,12 @@ methods = list(
     #fake_data <<- fake_counters
     fake_data <<- fake_probability
     
-    print(fake_data)
-    
+    # Tokenise credible news and find probabilities of each word given that news are fake
     credible_tokens <- unnest_tokens(data_credible, 'splitted', 'Body', token="words", to_lower = TRUE) %>% filter(!splitted %in% splitted_stop_words)
     credible_counters <- credible_tokens %>% count(splitted,sort=TRUE)
     
     summa <- sum(credible_counters[2])
     credible_counter <<- summa
-    print(summa)
     
     unique_values <- nrow(credible_counters)
     
@@ -87,26 +88,22 @@ methods = list(
     
     #credible_data <<- credible_counters
     credible_data <<- credible_probability
-    
-    print(credible_data)
-    print(all_counter)
-    print(fake_counter)
-    print(credible_counter)
   },
   
   # return prediction for a single message 
   predict = function(message)
   {
     fake_probability_overall = fake_counter / all_counter
-    
     credible_probability_overall = credible_counter / all_counter
     
+    # Take message and split it while deleting stop words from it
     message <- tolower(message)
     words <- strsplit(message , split = " ")[[1]] 
     words <- words[!words %in% splitted_stop_words]
     
     # Checks conditional probability for fake news
     fake_probability = 1
+    
     for (word in words){
       if (word %in% fake_data$splitted & word %in% credible_data$splitted){
         fake_probability = fake_probability * fake_data[which(fake_data[1] == word), 2] / credible_data[which(credible_data[1] == word), 2] * 100
@@ -127,16 +124,8 @@ methods = list(
         credible_probability = credible_probability * (1/all_counter) * 100
       }
     }
-    #print(fake_probability)
-    #print(fake_probability_overall)
-    #print(credible_probability)
-    #print(credible_probability_overall)
     
-    #fake_chance = fake_probability * fake_probability_overall / (fake_probability * fake_probability_overall + credible_probability * credible_probability_overall)
-    #credible_chance = credible_probability * credible_probability_overall / (credible_probability * credible_probability_overall + fake_probability * fake_probability_overall)
-    #print(fake_chance)
-    #print(credible_chance)
-    
+    # Returns if that message is fake (FALSE) or credible (TRUE)
     if (fake_probability >= credible_probability){
       return (FALSE)
     }
@@ -152,14 +141,17 @@ methods = list(
   # try how well your model generalizes to real world data! 
   score = function(data_path)
   {
+    # Read file with real world data
     data_file <- read.csv(file = data_path, stringsAsFactors = FALSE)
-    print("HERE")
+    
+    # Initialize counters for guesses
     correct_guesses = 0
     wrong_guesses = 0
+    
+    # For loop through all rows in data frame of real world data
     for (row in 1:nrow(data_file)){
-      print("Correct guesses are")
-      print(correct_guesses)
-      print(row)
+      print(row / nrow(data_file) * 100)
+      print(" % of file parsed")
       result <- model$predict(data_file[row, 3])
       if ((result == TRUE & data_file[row, 4] == "credible") || (result == FALSE & data_file[row, 4] == "fake")){
         correct_guesses = correct_guesses + 1
@@ -168,9 +160,7 @@ methods = list(
         wrong_guesses = wrong_guesses + 1
       }
     }
-    print("THERE")
-    print(correct_guesses)
-    print(wrong_guesses)
+    print("Precision of model is:")
     print(correct_guesses/(correct_guesses + wrong_guesses))
   }
 ))
